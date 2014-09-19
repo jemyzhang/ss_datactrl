@@ -21,18 +21,26 @@ fi
 if [ -d ${PORTS_DIR} ]; then
     for port in `ls ${PORTS_DIR}`
     do
-        #record data count
-        USAGE=`iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
-        echo "`date "+%Y%m%d" ${USAGE}" > ${DATA_DIR}${port}
-
-        #reset data counter
-        ${DEBUGEXEC} iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
-
-        ENA=`tail -n 1 ${PORTS_DIR}${port} | awk '{print $1}'`
+        EXPIRE=`cat ${PORTS_DIR}${port} | grep valid_days | sed 's/valid_days=\(.*\)/\1/'`
+        if [ $EXPIRE -le 0 ]; then
+            sed -i.bak 's/enabled=1/enabled=0/' ${PORTS_DIR}${port}
+            rm -f ${PORTS_DIR}*.bak
+        else
+            let left_days=EXPIRE-1
+            sed -i.bak 's/valid_days='"$EXPIRE"'/valid_days='"$left_days"'/' ${PORTS_DIR}${port}
+            rm -f ${PORTS_DIR}*.bak
+        fi
+        ENA=`cat ${PORTS_DIR}${port} | grep enabled | sed 's/enabled=\(.*\)/\1/'`
         if [ ${ENA} -eq 0 ]; then
             sed -i.bak 's/^\(\s\+\)\(\"'"${port}"'\"\)/#\1\2/' ${CONFIG_FILE}
+            #reset data counter
+            ${DEBUGEXEC} iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
         else
             sed -i.bak 's/^#\(\s\+\)\(\"'"${port}"'\"\)/\1\2/' ${CONFIG_FILE}
+
+            #record data count
+            USAGE=`iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
+            echo "`date "+%Y%m%d"` ${USAGE}" > ${DATA_DIR}${port}
 
             #start data counter
             ${DEBUGEXEC} iptables -I OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}

@@ -22,21 +22,29 @@ RELOAD=0
 if [ -d ${PORTS_DIR} ]; then
     for port in `ls ${PORTS_DIR}`
     do
-        ENA=`tail -n 1 ${PORTS_DIR}${port} | awk '{print $2}'`
-        if [ ${ENA} -eq 1 ]; then
-            if [ ! -f ${PORTS_DIR}${port}.limit ]; then
-                LIMITS=`tail -n 1 ${PORTS_DIR}${port} | awk '{print $3}'`
-                echo $LIMITS
-                USAGE=`iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
-                if [ $? -eq 0 ]; then
-                    USAGE=`echo ${USAGE} | tr -d 'M'`
-                    if [ ${USAGE} -gt ${LIMITS} ]; then
-                        sed -i.bak 's/^\(\s\+\)\(\"'"${port}"'\"\)/#\1\2/' ${CONFIG_FILE}
-                        ${DEBUGEXEC} iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
-                        RELOAD=1
-                        touch ${PORTS_DIR}${port}.limit
-                    fi
-                fi
+        ENA=`cat ${PORTS_DIR}${port} | grep enabled | sed 's/enabled=\(.*\)/\1/'`
+        if [ ${ENA} -eq 0 ]; then
+            continue
+        fi
+
+        CTRL=`cat ${PORTS_DIR}${port} | grep limit_ctrl | sed 's/limit_ctrl=\(.*\)/\1/'`
+        if [ ${CTRL} -eq 0 ]; then
+            continue
+        fi
+
+        if [ -f ${PORTS_DIR}${port}.limit ]; then
+            continue
+        fi
+
+        LIMITS=`cat ${PORTS_DIR}${port} | grep data_limit | sed 's/data_limit=\(.*\)/\1/'`
+        USAGE=`iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
+        if [ $? -eq 0 ]; then
+            USAGE=`echo ${USAGE} | tr -d 'M'`
+            if [ ${USAGE} -gt ${LIMITS} ]; then
+                sed -i.bak 's/^\(\s\+\)\(\"'"${port}"'\"\)/#\1\2/' ${CONFIG_FILE}
+                ${DEBUGEXEC} iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
+                RELOAD=1
+                touch ${PORTS_DIR}${port}.limit
             fi
         fi
     done
