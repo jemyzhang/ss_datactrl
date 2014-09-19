@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ -h $0 ]; then
     execpath=`dirname $0`"/"`readlink $0`
 else
