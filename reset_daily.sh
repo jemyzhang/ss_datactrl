@@ -40,7 +40,10 @@ if [ -d ${PORTS_DIR} ]; then
 
             #record data count
             USAGE=`/sbin/iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
-            echo "`date "+%Y%m%d"` ${USAGE}" > ${DATA_DIR}${port}
+            echo "`date "+%Y%m%d"` ${USAGE}" >> ${DATA_DIR}${port}
+
+            #reset data counter
+            ${DEBUGEXEC} /sbin/iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
 
             #start data counter
             ${DEBUGEXEC} /sbin/iptables -I OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
