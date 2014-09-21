@@ -34,16 +34,16 @@ if [ -d ${PORTS_DIR} ]; then
         if [ ${ENA} -eq 0 ]; then
             sed -i.bak 's/^\(\s\+\)\(\"'"${port}"'\"\)/#\1\2/' ${CONFIG_FILE}
             #reset data counter
-            ${DEBUGEXEC} iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
+            ${DEBUGEXEC} /sbin/iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
         else
             sed -i.bak 's/^#\(\s\+\)\(\"'"${port}"'\"\)/\1\2/' ${CONFIG_FILE}
 
             #record data count
-            USAGE=`iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
+            USAGE=`/sbin/iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'`
             echo "`date "+%Y%m%d"` ${USAGE}" > ${DATA_DIR}${port}
 
             #start data counter
-            ${DEBUGEXEC} iptables -I OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
+            ${DEBUGEXEC} /sbin/iptables -I OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
             if [ -f ${PORTS_DIR}${port}.limit ]; then
                 #restart limit checking
                 rm -f ${PORTS_DIR}${port}.limit

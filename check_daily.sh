@@ -37,12 +37,12 @@ if [ -d ${PORTS_DIR} ]; then
         fi
 
         LIMITS=`cat ${PORTS_DIR}${port} | grep data_limit | sed 's/data_limit=\(.*\)/\1/'`
-        USAGE=`iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'` | grep 'M'
+        USAGE=`/sbin/iptables -n -v -L -t filter | grep -i "spt:$port" | awk -F' ' '{print $2}'` | grep 'M'
         if [ $? -eq 0 ]; then
             USAGE=`echo ${USAGE} | tr -d 'M'`
             if [ ${USAGE} -gt ${LIMITS} ]; then
                 sed -i.bak 's/^\(\s\+\)\(\"'"${port}"'\"\)/#\1\2/' ${CONFIG_FILE}
-                ${DEBUGEXEC} iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
+                ${DEBUGEXEC} /sbin/iptables -D OUTPUT -s ${SERVER_IP} -p tcp --sport ${port}
                 RELOAD=1
                 touch ${PORTS_DIR}${port}.limit
             fi
