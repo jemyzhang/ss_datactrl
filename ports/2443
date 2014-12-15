@@ -1,0 +1,7 @@
+enabled=1
+limit_ctrl=1
+data_limit=2000
+valid_days=365
+user_info=public
+send_report=0
+
