@@ -17,18 +17,25 @@ if [ ! -f ${dirname}/config.sh ]; then
 fi
 
 . ${dirname}/config.sh
+if [ $# -gt 0 ]; then
+    NO_CHECK_EXPIRE=1
+fi
 
 if [ -d ${PORTS_DIR} ]; then
     for port in `ls ${PORTS_DIR}`
     do
-        EXPIRE=`cat ${PORTS_DIR}${port} | grep valid_days | sed 's/valid_days=\(.*\)/\1/'`
-        if [ $EXPIRE -le 0 ]; then
-            sed -i.bak 's/enabled=1/enabled=0/' ${PORTS_DIR}${port}
-            rm -f ${PORTS_DIR}*.bak
+        if [ $NO_CHECK_EXPIRE -eq 1 ]; then
+            echo "no check expire"
         else
-            let left_days=EXPIRE-1
-            sed -i.bak 's/valid_days='"$EXPIRE"'/valid_days='"$left_days"'/' ${PORTS_DIR}${port}
-            rm -f ${PORTS_DIR}*.bak
+            EXPIRE=`cat ${PORTS_DIR}${port} | grep valid_days | sed 's/valid_days=\(.*\)/\1/'`
+            if [ $EXPIRE -le 0 ]; then
+                sed -i.bak 's/enabled=1/enabled=0/' ${PORTS_DIR}${port}
+                rm -f ${PORTS_DIR}*.bak
+            else
+                let left_days=EXPIRE-1
+                sed -i.bak 's/valid_days='"$EXPIRE"'/valid_days='"$left_days"'/' ${PORTS_DIR}${port}
+                rm -f ${PORTS_DIR}*.bak
+            fi
         fi
         ENA=`cat ${PORTS_DIR}${port} | grep enabled | sed 's/enabled=\(.*\)/\1/'`
         if [ ${ENA} -eq 0 ]; then
