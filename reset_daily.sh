@@ -19,6 +19,8 @@ fi
 . ${dirname}/config.sh
 if [ $# -gt 0 ]; then
     NO_CHECK_EXPIRE=1
+else
+    NO_CHECK_EXPIRE=0
 fi
 
 if [ -d ${PORTS_DIR} ]; then
